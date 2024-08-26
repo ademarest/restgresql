@@ -1,2 +1,3 @@
-./src/build
-./src/CMakeLists.txt.user
+/src/build
+/src/CMakeLists.txt.user
+/src/mongoose
