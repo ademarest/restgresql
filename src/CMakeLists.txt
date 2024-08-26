@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.11)
 
 #cmake will warn about CMP0167 not being set in cmake >= 3.30.
 #Setting this as new keeps the cmake up to the latest policy standard.
-#cmake_policy(SET CMP0167 NEW)
+if(CMAKE_VERSION GREATER_EQUAL 3.30)
+    cmake_policy(SET CMP0167 NEW)
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
