@@ -22,6 +22,7 @@ int main(int argc, char *argv[]) {
     //liblzma-dev
     //libzstd-dev
 
+    bool ssl = false;
     std::string configFile;
     options_description desc("Allowed options");
     desc.add_options()
@@ -29,8 +30,9 @@ int main(int argc, char *argv[]) {
         (
             "config,c",
             value<std::string>()->default_value("/etc/restgresql/restgresql.conf")->value_name("[=CONFIG.json]"),
-            "Set the configuration file for the RestgreSQL."
-        );
+            "Set the configuration file for the RestgreSQL, overriding the default of /etc/restgresql/restgresql.conf"
+        )
+        ("dev-no-ssl,d", "Disable SSL for development with this flag. Do not use in production.");
 
     variables_map vm;
     store(parse_command_line(argc, argv, desc), vm);
@@ -41,7 +43,9 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    RestAPI *api = new RestAPI(vm["config"].as<std::string>());
+    ssl = !vm.count("dev-no-ssl");
+
+    RestAPI *api = new RestAPI(ssl, vm["config"].as<std::string>());
     api->startServer();
     return 0;
 }
