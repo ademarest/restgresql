@@ -33,7 +33,7 @@ FetchContent_Declare(
 FetchContent_Declare(
     mongoose_git
     GIT_REPOSITORY https://github.com/cesanta/mongoose.git
-    GIT_TAG 6bb40e6ec96f95bfd36a816b430ea2726fac9d05 #7.14
+    GIT_TAG 97296934ab594241ba2489f018a21779882a7936 #7.15
 )
 
 FetchContent_MakeAvailable(json mongoose_git)
