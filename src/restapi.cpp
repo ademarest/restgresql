@@ -9,6 +9,24 @@ using namespace std;
 using namespace boost;
 
 RestAPI::RestAPI(){
+    init();
+}
+
+RestAPI::RestAPI(bool ssl, string configFile) {
+    if(!ssl){
+        cout << "Warning: Running without SSL" << endl;
+    }
+    RestAPI::ssl = ssl;
+    RestAPI::setConfigFile(configFile);
+    init();
+}
+
+
+RestAPI::~RestAPI() {
+    running=false;
+}
+
+void RestAPI::init(){
     if(!boost::filesystem::exists(RestAPI::configFile)){
         createConfigFile(configFile);
     }
@@ -16,13 +34,13 @@ RestAPI::RestAPI(){
     psql.reset(new PostgreSQL(data["dbConnString"]));
 }
 
-RestAPI::RestAPI(string configFile) {
-    RestAPI::setConfigFile(configFile);
-    RestAPI();
+void RestAPI::setSSL(bool ssl){
+    lock_guard<mutex> guard(RestAPI::mtx);
+    RestAPI::ssl = ssl;
 }
 
-RestAPI::~RestAPI() {
-    running=false;
+bool RestAPI::getSSL(){
+    return RestAPI::ssl;
 }
 
 void RestAPI::setConfigFile(std::string configFile)
@@ -84,14 +102,14 @@ void RestAPI::createConfigFile(string configFile){
     cf.close();
 }
 
-void RestAPI::handleRequest(struct mg_connection *c, int ev, void *ev_data){   
+void RestAPI::handleRequest(struct mg_connection *c, int ev, void *ev_data){
     json data = RestAPI::getConfigJson();
 
     string dbConnString = data["dbConnString"];
     string certPath = data["certPath"];
     string keyPath = data["keyPath"];
 
-    if (ev == MG_EV_ACCEPT) {
+    if (ev == MG_EV_ACCEPT && RestAPI::ssl) {
         mg_str crt = mg_file_read(&mg_fs_posix, certPath.c_str());
         mg_str key = mg_file_read(&mg_fs_posix, keyPath.c_str());
         struct mg_tls_opts opts = {.cert = crt, .key = key};

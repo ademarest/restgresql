@@ -11,9 +11,12 @@ class RestAPI
 {
 public:
     RestAPI();
-    RestAPI(std::string configFile);
+    RestAPI(bool ssl, std::string configFile);
     ~RestAPI();
 
+    static void init();
+    static void setSSL(bool ssl);
+    static bool getSSL();
     static void setConfigFile(std::string configFile);
     static std::string getConfigFile();
     static nlohmann::json getConfigJson();
@@ -23,9 +26,11 @@ public:
     void startServer();
 
 private:
+
     static inline std::unique_ptr<PostgreSQL> psql;
     static inline std::string configFile = "./restgresql.json";
     static inline std::mutex mtx;
+    static inline bool ssl = true;
     bool running = true;
 };
 
