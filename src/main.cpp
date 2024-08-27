@@ -22,7 +22,6 @@ int main(int argc, char *argv[]) {
     //liblzma-dev
     //libzstd-dev
 
-    bool ssl = false;
     std::string configFile;
     options_description desc("Allowed options");
     desc.add_options()
@@ -43,7 +42,7 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
-    ssl = !vm.count("dev-no-ssl");
+    bool ssl = !vm.count("dev-no-ssl");
 
     RestAPI *api = new RestAPI(ssl, vm["config"].as<std::string>());
     api->startServer();
