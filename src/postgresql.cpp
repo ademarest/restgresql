@@ -61,7 +61,8 @@ void PostgreSQL::initializeStatements(){
         {"recentArticles","select * from content.fn_get_recent_articles($1)"},
         {"recentProjects","select * from content.fn_get_recent_projects($1)"},
         {"allProjects", allPosts + "WHERE vp.post_category = 'project'"},
-        {"allArticles", allPosts + "WHERE vp.post_category = 'article'"}
+        {"allArticles", allPosts + "WHERE vp.post_category = 'article'"},
+        {"allPosts", allPosts},
     };
 
     for(auto &qry: queries){
