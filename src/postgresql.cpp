@@ -121,13 +121,12 @@ nlohmann::json PostgreSQL::pqxxResultSetToJson(const pqxx::result &rs){
     return obj;
 }
 
-//QryParams are optional for the function.
-template<typename... QryParams>
-json PostgreSQL::execGenericJsonQry(std::string qry, QryParams... qprms){
+//qprms are optional for the function.
+json PostgreSQL::execGenericJsonQry(std::string qry, pqxx::params qprms = {}){
     json data;
     try{
         pqxx::work txn{*c};
-        pqxx::result r = txn.exec_prepared(qry,qprms...);
+        pqxx::result r = txn.exec(qry,qprms);
         data = pqxxResultSetToJson(r);
     }  catch(const exception &e){
         cout << e.what() << endl;
@@ -136,12 +135,11 @@ json PostgreSQL::execGenericJsonQry(std::string qry, QryParams... qprms){
     return data;
 }
 
-template<typename... QryParams>
-string PostgreSQL::execGenericImgQry(string qry, QryParams...qprms){
+string PostgreSQL::execGenericImgQry(string qry, pqxx::params qprms){
     string img;
     try{
         pqxx::work txn{*c};
-        pqxx::result r = txn.exec_prepared(qry,qprms...);
+        pqxx::result r = txn.exec(qry,qprms);
         for(auto const &row: r){
             pqxx::binarystring bs = row[0].as<pqxx::binarystring>();
             img = bs.str();

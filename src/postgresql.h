@@ -25,11 +25,9 @@ public:
     nlohmann::json getAllPosts();
     nlohmann::json getAllProjects();
 
-    template<typename... QryParams>
-    nlohmann::json execGenericJsonQry(std::string qry, QryParams... qprms);
+    nlohmann::json execGenericJsonQry(std::string qry, pqxx::params qprms);
 
-    template<typename... QryParams>
-    std::string execGenericImgQry(std::string qry, QryParams... qprms);
+    std::string execGenericImgQry(std::string qry, pqxx::params qprms);
 
 private:
     pqxx::connection *c = nullptr;
