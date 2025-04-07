@@ -25,9 +25,9 @@ public:
     nlohmann::json getAllPosts();
     nlohmann::json getAllProjects();
 
-    nlohmann::json execGenericJsonQry(std::string qry, pqxx::params qprms);
+    nlohmann::json execGenericJsonQry(std::string qry, pqxx::params qprms = {});
 
-    std::string execGenericImgQry(std::string qry, pqxx::params qprms);
+    std::string execGenericImgQry(std::string qry, pqxx::params qprms = {});
 
 private:
     pqxx::connection *c = nullptr;

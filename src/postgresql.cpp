@@ -24,7 +24,7 @@ PostgreSQL::~PostgreSQL(){
 string PostgreSQL::toLowerCamelCase(std::string s)
 {
     transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c){ return tolower(c); });
+              [](unsigned char c){ return tolower(c); });
 
     boost::regex re("([_-][a-z])");
     s = boost::regex_replace(s, re, [](const boost::smatch& sm){
@@ -54,16 +54,16 @@ void PostgreSQL::initializeStatements(){
                       "FROM content.vw_posts vp\n";
 
     map<string,string> queries = {
-        {"imageById","select image from content.fn_get_image_by_id($1)"},
-        {"imageByFilename", "select image from content.fn_get_image_by_filename($1)"},
-        {"postById","select * from content.fn_get_post_by_id($1)"},
-        {"recentPosts","select * from content.fn_get_recent_posts($1)"},
-        {"recentArticles","select * from content.fn_get_recent_articles($1)"},
-        {"recentProjects","select * from content.fn_get_recent_projects($1)"},
-        {"allProjects", allPosts + "WHERE vp.post_category = 'project'"},
-        {"allArticles", allPosts + "WHERE vp.post_category = 'article'"},
-        {"allPosts", allPosts},
-    };
+                                   {"imageById","select image from content.fn_get_image_by_id($1)"},
+                                   {"imageByFilename", "select image from content.fn_get_image_by_filename($1)"},
+                                   {"postById","select * from content.fn_get_post_by_id($1)"},
+                                   {"recentPosts","select * from content.fn_get_recent_posts($1)"},
+                                   {"recentArticles","select * from content.fn_get_recent_articles($1)"},
+                                   {"recentProjects","select * from content.fn_get_recent_projects($1)"},
+                                   {"allProjects", allPosts + "WHERE vp.post_category = 'project'"},
+                                   {"allArticles", allPosts + "WHERE vp.post_category = 'article'"},
+                                   {"allPosts", allPosts},
+                                   };
 
     for(auto &qry: queries){
         c->prepare(qry.first,qry.second);
@@ -122,11 +122,11 @@ nlohmann::json PostgreSQL::pqxxResultSetToJson(const pqxx::result &rs){
 }
 
 //qprms are optional for the function.
-json PostgreSQL::execGenericJsonQry(std::string qry, pqxx::params qprms = {}){
+json PostgreSQL::execGenericJsonQry(string qry, pqxx::params qprms){
     json data;
     try{
         pqxx::work txn{*c};
-        pqxx::result r = txn.exec(qry,qprms);
+        pqxx::result r = txn.exec(pqxx::prepped{qry},qprms);
         data = pqxxResultSetToJson(r);
     }  catch(const exception &e){
         cout << e.what() << endl;
@@ -139,7 +139,7 @@ string PostgreSQL::execGenericImgQry(string qry, pqxx::params qprms){
     string img;
     try{
         pqxx::work txn{*c};
-        pqxx::result r = txn.exec(qry,qprms);
+        pqxx::result r = txn.exec(pqxx::prepped{qry},qprms);
         for(auto const &row: r){
             pqxx::binarystring bs = row[0].as<pqxx::binarystring>();
             img = bs.str();
