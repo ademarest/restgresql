@@ -25,11 +25,9 @@ public:
     nlohmann::json getAllPosts();
     nlohmann::json getAllProjects();
 
-    template<typename... QryParams>
-    nlohmann::json execGenericJsonQry(std::string qry, QryParams... qprms);
-
-    template<typename... QryParams>
-    std::string execGenericImgQry(std::string qry, QryParams... qprms);
+    nlohmann::json execGenericJsonArrQry(std::string qry,  pqxx::params qprms = {});
+    nlohmann::json execGenericJsonObjQry(std::string qry,  pqxx::params qprms = {});
+    std::string    execGenericImgQry(std::string qry,      pqxx::params qprms);
 
 private:
     pqxx::connection *c = nullptr;
@@ -37,7 +35,8 @@ private:
     void initializeStatements();
     nlohmann::json pqxxFieldToJsonData(const pqxx::field &f);
     nlohmann::json pqxxRowToJsonObject(const pqxx::row &r);
-    nlohmann::json pqxxResultSetToJson(const pqxx::result &rs);
+    nlohmann::json pqxxResultSetToJson(const pqxx::result &rs, bool isArr);
+    nlohmann::json execGenericJsonQry(std::string qry, bool isArr, pqxx::params qprms = {});
 };
 
 #endif // POSTGRESQL_H

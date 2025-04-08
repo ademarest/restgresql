@@ -24,7 +24,7 @@ PostgreSQL::~PostgreSQL(){
 string PostgreSQL::toLowerCamelCase(std::string s)
 {
     transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c){ return tolower(c); });
+              [](unsigned char c){ return tolower(c); });
 
     boost::regex re("([_-][a-z])");
     s = boost::regex_replace(s, re, [](const boost::smatch& sm){
@@ -54,16 +54,16 @@ void PostgreSQL::initializeStatements(){
                       "FROM content.vw_posts vp\n";
 
     map<string,string> queries = {
-        {"imageById","select image from content.fn_get_image_by_id($1)"},
-        {"imageByFilename", "select image from content.fn_get_image_by_filename($1)"},
-        {"postById","select * from content.fn_get_post_by_id($1)"},
-        {"recentPosts","select * from content.fn_get_recent_posts($1)"},
-        {"recentArticles","select * from content.fn_get_recent_articles($1)"},
-        {"recentProjects","select * from content.fn_get_recent_projects($1)"},
-        {"allProjects", allPosts + "WHERE vp.post_category = 'project'"},
-        {"allArticles", allPosts + "WHERE vp.post_category = 'article'"},
-        {"allPosts", allPosts},
-    };
+                                   {"imageById","select image from content.fn_get_image_by_id($1)"},
+                                   {"imageByFilename", "select image from content.fn_get_image_by_filename($1)"},
+                                   {"postById","select * from content.fn_get_post_by_id($1)"},
+                                   {"recentPosts","select * from content.fn_get_recent_posts($1)"},
+                                   {"recentArticles","select * from content.fn_get_recent_articles($1)"},
+                                   {"recentProjects","select * from content.fn_get_recent_projects($1)"},
+                                   {"allProjects", allPosts + "WHERE vp.post_category = 'project'"},
+                                   {"allArticles", allPosts + "WHERE vp.post_category = 'article'"},
+                                   {"allPosts", allPosts},
+                                   };
 
     for(auto &qry: queries){
         c->prepare(qry.first,qry.second);
@@ -105,30 +105,43 @@ nlohmann::json PostgreSQL::pqxxRowToJsonObject(const pqxx::row &r){
     return obj;
 }
 
-nlohmann::json PostgreSQL::pqxxResultSetToJson(const pqxx::result &rs){
+nlohmann::json PostgreSQL::pqxxResultSetToJson(const pqxx::result &rs, bool isArr){
     json obj;
-    if(rs.size() == 0){
-        return  obj;
-    } if(rs.size() == 1){
-        return pqxxRowToJsonObject(rs.begin());
-    } if(rs.size() > 1){
+    if(isArr){
         obj = json::array();
-        for(const auto &r:rs){
-            obj.push_back(pqxxRowToJsonObject(r));
+        if(rs.size() == 0){
+            return obj;
+        } if(rs.size() > 0){
+            for(const auto &r:rs){
+                obj.push_back(pqxxRowToJsonObject(r));
+            }
+            return obj;
         }
-        return obj;
+    } else {
+        if(rs.size() == 0){
+            return obj;
+        } if(rs.size() == 1){
+            return pqxxRowToJsonObject(rs.begin());
+        }
     }
     return obj;
 }
 
-//QryParams are optional for the function.
-template<typename... QryParams>
-json PostgreSQL::execGenericJsonQry(std::string qry, QryParams... qprms){
+json PostgreSQL::execGenericJsonArrQry(string qry, pqxx::params qprms){
+    return execGenericJsonQry(qry, true, qprms);
+}
+
+json PostgreSQL::execGenericJsonObjQry(string qry, pqxx::params qprms){
+    return execGenericJsonQry(qry, false, qprms);
+}
+
+//qprms are optional for the function.
+json PostgreSQL::execGenericJsonQry(string qry, bool isArr, pqxx::params qprms){
     json data;
     try{
         pqxx::work txn{*c};
-        pqxx::result r = txn.exec_prepared(qry,qprms...);
-        data = pqxxResultSetToJson(r);
+        pqxx::result r = txn.exec(pqxx::prepped{qry},qprms);
+        data = pqxxResultSetToJson(r,isArr);
     }  catch(const exception &e){
         cout << e.what() << endl;
         throw;
@@ -136,12 +149,11 @@ json PostgreSQL::execGenericJsonQry(std::string qry, QryParams... qprms){
     return data;
 }
 
-template<typename... QryParams>
-string PostgreSQL::execGenericImgQry(string qry, QryParams...qprms){
+string PostgreSQL::execGenericImgQry(string qry, pqxx::params qprms){
     string img;
     try{
         pqxx::work txn{*c};
-        pqxx::result r = txn.exec_prepared(qry,qprms...);
+        pqxx::result r = txn.exec(pqxx::prepped{qry},qprms);
         for(auto const &row: r){
             pqxx::binarystring bs = row[0].as<pqxx::binarystring>();
             img = bs.str();
@@ -162,29 +174,29 @@ string PostgreSQL::getImageByFilename(string filename){
 }
 
 json PostgreSQL::getPostById(int id){
-    return execGenericJsonQry("postById", id);
+    return execGenericJsonObjQry("postById", id);
 }
 
 json PostgreSQL::getRecentPosts(int howMany){
-    return execGenericJsonQry("recentPosts",howMany);
+    return execGenericJsonArrQry("recentPosts",howMany);
 }
 
 json PostgreSQL::getRecentArticles(int howMany){
-    return execGenericJsonQry("recentArticles",howMany);
+    return execGenericJsonArrQry("recentArticles",howMany);
 }
 
 json PostgreSQL::getRecentProjects(int howMany){
-    return execGenericJsonQry("recentProjects",howMany);
+    return execGenericJsonArrQry("recentProjects",howMany);
 }
 
 json PostgreSQL::getAllPosts(){
-    return execGenericJsonQry("allPosts");
+    return execGenericJsonArrQry("allPosts");
 }
 
 json PostgreSQL::getAllProjects(){
-    return execGenericJsonQry("allProjects");
+    return execGenericJsonArrQry("allProjects");
 }
 
 json PostgreSQL::getAllArticles(){
-    return execGenericJsonQry("allArticles");
+    return execGenericJsonArrQry("allArticles");
 }
