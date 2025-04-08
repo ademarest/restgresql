@@ -105,29 +105,43 @@ nlohmann::json PostgreSQL::pqxxRowToJsonObject(const pqxx::row &r){
     return obj;
 }
 
-nlohmann::json PostgreSQL::pqxxResultSetToJson(const pqxx::result &rs){
+nlohmann::json PostgreSQL::pqxxResultSetToJson(const pqxx::result &rs, bool isArr){
     json obj;
-    if(rs.size() == 0){
-        return  obj;
-    } if(rs.size() == 1){
-        return pqxxRowToJsonObject(rs.begin());
-    } if(rs.size() > 1){
+    if(isArr){
         obj = json::array();
-        for(const auto &r:rs){
-            obj.push_back(pqxxRowToJsonObject(r));
+        if(rs.size() == 0){
+            return obj;
+        } if(rs.size() > 0){
+            for(const auto &r:rs){
+                obj.push_back(pqxxRowToJsonObject(r));
+            }
+            return obj;
         }
-        return obj;
+    } else {
+        if(rs.size() == 0){
+            return obj;
+        } if(rs.size() == 1){
+            return pqxxRowToJsonObject(rs.begin());
+        }
     }
     return obj;
 }
 
+json PostgreSQL::execGenericJsonArrQry(string qry, pqxx::params qprms){
+    return execGenericJsonQry(qry, true, qprms);
+}
+
+json PostgreSQL::execGenericJsonObjQry(string qry, pqxx::params qprms){
+    return execGenericJsonQry(qry, false, qprms);
+}
+
 //qprms are optional for the function.
-json PostgreSQL::execGenericJsonQry(string qry, pqxx::params qprms){
+json PostgreSQL::execGenericJsonQry(string qry, bool isArr, pqxx::params qprms){
     json data;
     try{
         pqxx::work txn{*c};
         pqxx::result r = txn.exec(pqxx::prepped{qry},qprms);
-        data = pqxxResultSetToJson(r);
+        data = pqxxResultSetToJson(r,isArr);
     }  catch(const exception &e){
         cout << e.what() << endl;
         throw;
@@ -160,29 +174,29 @@ string PostgreSQL::getImageByFilename(string filename){
 }
 
 json PostgreSQL::getPostById(int id){
-    return execGenericJsonQry("postById", id);
+    return execGenericJsonObjQry("postById", id);
 }
 
 json PostgreSQL::getRecentPosts(int howMany){
-    return execGenericJsonQry("recentPosts",howMany);
+    return execGenericJsonArrQry("recentPosts",howMany);
 }
 
 json PostgreSQL::getRecentArticles(int howMany){
-    return execGenericJsonQry("recentArticles",howMany);
+    return execGenericJsonArrQry("recentArticles",howMany);
 }
 
 json PostgreSQL::getRecentProjects(int howMany){
-    return execGenericJsonQry("recentProjects",howMany);
+    return execGenericJsonArrQry("recentProjects",howMany);
 }
 
 json PostgreSQL::getAllPosts(){
-    return execGenericJsonQry("allPosts");
+    return execGenericJsonArrQry("allPosts");
 }
 
 json PostgreSQL::getAllProjects(){
-    return execGenericJsonQry("allProjects");
+    return execGenericJsonArrQry("allProjects");
 }
 
 json PostgreSQL::getAllArticles(){
-    return execGenericJsonQry("allArticles");
+    return execGenericJsonArrQry("allArticles");
 }
