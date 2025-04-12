@@ -6,23 +6,12 @@
 using namespace std;
 using namespace nlohmann;
 
-PostgreSQL::PostgreSQL(string connString) {
-    c = new pqxx::connection(connString);
+PostgreSQL::PostgreSQL(string connString)
+    : c(shared_ptr<pqxx::connection>(new pqxx::connection(connString))){
     initializeStatements();
 }
 
-PostgreSQL::PostgreSQL(PostgreSQL &psql){
-    c = new pqxx::connection(psql.c->connection_string());
-    initializeStatements();
-}
-
-PostgreSQL::~PostgreSQL(){
-    c->close();
-    delete c;
-}
-
-string PostgreSQL::toLowerCamelCase(std::string s)
-{
+string PostgreSQL::toLowerCamelCase(std::string s){
     transform(s.begin(), s.end(), s.begin(),
               [](unsigned char c){ return tolower(c); });
 
