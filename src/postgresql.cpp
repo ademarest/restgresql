@@ -132,7 +132,7 @@ json PostgreSQL::execGenericJsonQry(string qry, bool isArr, pqxx::params qprms){
         pqxx::result r = txn.exec(pqxx::prepped{qry},qprms);
         data = pqxxResultSetToJson(r,isArr);
     }  catch(const exception &e){
-        cout << e.what() << endl;
+        cout << "PostgreSQL::execGenericJsonQry " << e.what() << endl;
         throw;
     }
     return data;
@@ -148,7 +148,7 @@ string PostgreSQL::execGenericImgQry(string qry, pqxx::params qprms){
             img = bs.str();
         }
     } catch(const exception &e){
-        cout << e.what() << endl;
+        cout << "PostgreSQL::execGenericImgQry " << e.what() << endl;
         throw;
     }
     return img;

@@ -251,7 +251,7 @@ void RestAPI::handleRequest(struct mg_connection *c, int ev, void *ev_data){
             }
 
         } catch(const std::exception &e){
-            cout << e.what() << endl;
+            cout << "RestAPI::handleRequest " << e.what() << endl;
             psql.reset(new PostgreSQL(dbConnString));
             mg_http_reply(c, 500, "", "<h1>500</h1>\nInternal Server Error!\n I don't feel so good Mr. Stark.");
         }
