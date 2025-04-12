@@ -5,6 +5,7 @@
 #include <pqxx/pqxx>
 #include <stdarg.h>
 #include <memory>
+#include <mutex>
 
 class PostgreSQL
 {
@@ -28,6 +29,7 @@ public:
     std::string    execGenericImgQry(std::string qry,      pqxx::params qprms);
 
 private:
+    std::shared_ptr<std::mutex> cmtx{std::make_shared<std::mutex>()};
     std::shared_ptr<pqxx::connection> c;
 
     void initializeStatements();
