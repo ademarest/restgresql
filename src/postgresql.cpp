@@ -126,6 +126,7 @@ json PostgreSQL::execGenericJsonObjQry(string qry, pqxx::params qprms){
 
 //qprms are optional for the function.
 json PostgreSQL::execGenericJsonQry(string qry, bool isArr, pqxx::params qprms){
+    lock_guard<mutex> lock(*cmtx);
     json data;
     try{
         pqxx::work txn{*c};
@@ -139,6 +140,7 @@ json PostgreSQL::execGenericJsonQry(string qry, bool isArr, pqxx::params qprms){
 }
 
 string PostgreSQL::execGenericImgQry(string qry, pqxx::params qprms){
+    lock_guard<mutex> lock(*cmtx);
     string img;
     try{
         pqxx::work txn{*c};
