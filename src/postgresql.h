@@ -4,14 +4,12 @@
 #include <nlohmann/json.hpp>
 #include <pqxx/pqxx>
 #include <stdarg.h>
+#include <memory>
 
 class PostgreSQL
 {
 public:
-    //Rule of 3
     PostgreSQL(std::string connString);
-    PostgreSQL(PostgreSQL &psql);
-    ~PostgreSQL();
 
     std::string toLowerCamelCase(std::string in);
 
@@ -30,7 +28,7 @@ public:
     std::string    execGenericImgQry(std::string qry,      pqxx::params qprms);
 
 private:
-    pqxx::connection *c = nullptr;
+    std::shared_ptr<pqxx::connection> c;
 
     void initializeStatements();
     nlohmann::json pqxxFieldToJsonData(const pqxx::field &f);

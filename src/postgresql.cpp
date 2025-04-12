@@ -6,23 +6,12 @@
 using namespace std;
 using namespace nlohmann;
 
-PostgreSQL::PostgreSQL(string connString) {
-    c = new pqxx::connection(connString);
+PostgreSQL::PostgreSQL(string connString)
+    : c(shared_ptr<pqxx::connection>(new pqxx::connection(connString))){
     initializeStatements();
 }
 
-PostgreSQL::PostgreSQL(PostgreSQL &psql){
-    c = new pqxx::connection(psql.c->connection_string());
-    initializeStatements();
-}
-
-PostgreSQL::~PostgreSQL(){
-    c->close();
-    delete c;
-}
-
-string PostgreSQL::toLowerCamelCase(std::string s)
-{
+string PostgreSQL::toLowerCamelCase(std::string s){
     transform(s.begin(), s.end(), s.begin(),
               [](unsigned char c){ return tolower(c); });
 
@@ -143,7 +132,7 @@ json PostgreSQL::execGenericJsonQry(string qry, bool isArr, pqxx::params qprms){
         pqxx::result r = txn.exec(pqxx::prepped{qry},qprms);
         data = pqxxResultSetToJson(r,isArr);
     }  catch(const exception &e){
-        cout << e.what() << endl;
+        cout << "PostgreSQL::execGenericJsonQry " << e.what() << endl;
         throw;
     }
     return data;
@@ -159,7 +148,7 @@ string PostgreSQL::execGenericImgQry(string qry, pqxx::params qprms){
             img = bs.str();
         }
     } catch(const exception &e){
-        cout << e.what() << endl;
+        cout << "PostgreSQL::execGenericImgQry " << e.what() << endl;
         throw;
     }
     return img;
