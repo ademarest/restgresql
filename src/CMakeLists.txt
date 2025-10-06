@@ -37,12 +37,12 @@ FetchContent_Declare(
 FetchContent_Declare(
     mongoose_git
     GIT_REPOSITORY https://github.com/cesanta/mongoose.git
-    GIT_TAG ccfe7e0724dd9bd4a6c447c84552e0ca47767ce8 #7.18
+    GIT_TAG 739d78a45a8fa6595498df67d11cac3e39af8c0e #7.19
 )
 
 FetchContent_Declare(
     Boost
-    URL https://github.com/boostorg/boost/releases/download/boost-1.87.0/boost-1.87.0-cmake.tar.xz
+    URL https://github.com/boostorg/boost/releases/download/boost-1.89.0/boost-1.89.0-cmake.tar.gz
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 
