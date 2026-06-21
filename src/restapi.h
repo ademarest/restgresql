@@ -27,6 +27,8 @@ public:
 
 private:
 
+    static void sendJson(struct mg_connection *c, std::string_view body);
+
     static inline std::unique_ptr<PostgreSQL> psql;
     static inline std::string configFile = "./restgresql.json";
     static inline std::mutex mtx;

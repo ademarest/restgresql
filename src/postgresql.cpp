@@ -59,7 +59,7 @@ void PostgreSQL::initializeStatements(){
     }
 }
 
-nlohmann::json PostgreSQL::pqxxFieldToJsonData(const pqxx::field &f){
+nlohmann::json PostgreSQL::pqxxFieldToJsonData(const pqxx::field_ref &f){
     json data;
     if(f.is_null()){
         return data;
@@ -85,7 +85,7 @@ nlohmann::json PostgreSQL::pqxxFieldToJsonData(const pqxx::field &f){
     return data;
 }
 
-nlohmann::json PostgreSQL::pqxxRowToJsonObject(const pqxx::row &r){
+nlohmann::json PostgreSQL::pqxxRowToJsonObject(const pqxx::row_ref &r){
     //Define null interface.
     json obj = json::object();
     for(const auto &f:r){
@@ -110,7 +110,7 @@ nlohmann::json PostgreSQL::pqxxResultSetToJson(const pqxx::result &rs, bool isAr
         if(rs.size() == 0){
             return obj;
         } if(rs.size() == 1){
-            return pqxxRowToJsonObject(rs.begin());
+            return pqxxRowToJsonObject(*rs.begin());
         }
     }
     return obj;
@@ -146,8 +146,8 @@ string PostgreSQL::execGenericImgQry(string qry, pqxx::params qprms){
         pqxx::work txn{*c};
         pqxx::result r = txn.exec(pqxx::prepped{qry},qprms);
         for(auto const &row: r){
-            pqxx::binarystring bs = row[0].as<pqxx::binarystring>();
-            img = bs.str();
+            pqxx::bytes bs = row[0].as<pqxx::bytes>();
+            img.assign(reinterpret_cast<const char*>(bs.data()), bs.size());
         }
     } catch(const exception &e){
         cout << "PostgreSQL::execGenericImgQry " << e.what() << endl;

@@ -33,8 +33,8 @@ private:
     std::shared_ptr<pqxx::connection> c;
 
     void initializeStatements();
-    nlohmann::json pqxxFieldToJsonData(const pqxx::field &f);
-    nlohmann::json pqxxRowToJsonObject(const pqxx::row &r);
+    nlohmann::json pqxxFieldToJsonData(const pqxx::field_ref &f);
+    nlohmann::json pqxxRowToJsonObject(const pqxx::row_ref &r);
     nlohmann::json pqxxResultSetToJson(const pqxx::result &rs, bool isArr);
     nlohmann::json execGenericJsonQry(std::string qry, bool isArr, pqxx::params qprms = {});
 };
