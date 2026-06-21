@@ -102,6 +102,17 @@ void RestAPI::createConfigFile(string configFile){
     cf.close();
 }
 
+void RestAPI::sendJson(struct mg_connection *c, std::string_view body) {
+    mg_printf(c,
+              "HTTP/1.1 200 OK\r\n"
+              "Content-Type:application/json\r\n"
+              "Access-Control-Allow-Origin:*\r\n"
+              "Content-Length:%lu\r\n\r\n",
+              (unsigned long) body.size());
+    mg_send(c, body.data(), body.size());
+    c->is_resp = 0;
+}
+
 void RestAPI::handleRequest(struct mg_connection *c, int ev, void *ev_data){
     json data = RestAPI::getConfigJson();
 
@@ -142,34 +153,19 @@ void RestAPI::handleRequest(struct mg_connection *c, int ev, void *ev_data){
             //All posts
             if(mg_match(message->uri,mg_str("/api/posts"), NULL)){
 
-                mg_http_reply(c,
-                              200,
-                              "Content-Type:application/json\r\n"
-                              "Access-Control-Allow-Origin:*\r\n",
-                              "%s\n", psql->getAllPosts().dump(4).c_str()
-                              );
+                sendJson(c, psql->getAllPosts().dump(4));
 
             }
             //All projects
             else if(mg_match(message->uri,mg_str("/api/projects"),NULL)){
 
-                mg_http_reply(c,
-                              200,
-                              "Content-Type:application/json\r\n"
-                              "Access-Control-Allow-Origin:*\r\n",
-                              "%s\n", psql->getAllProjects().dump(4).c_str()
-                              );
+                sendJson(c, psql->getAllProjects().dump(4));
 
             }
             //All articles
             else if(mg_match(message->uri,mg_str("/api/articles"),NULL)){
 
-                mg_http_reply(c,
-                              200,
-                              "Content-Type:application/json\r\n"
-                              "Access-Control-Allow-Origin:*\r\n",
-                              "%s\n", psql->getAllArticles().dump(4).c_str()
-                              );
+                sendJson(c, psql->getAllArticles().dump(4));
 
             }
             //Post by id
@@ -177,48 +173,28 @@ void RestAPI::handleRequest(struct mg_connection *c, int ev, void *ev_data){
 
                 int postId = stoi(postByIdMatch[2]);
 
-                mg_http_reply(c,
-                              200,
-                              "Content-Type:application/json\r\n"
-                              "Access-Control-Allow-Origin:*\r\n",
-                              "%s\n", psql->getPostById(postId).dump(4).c_str()
-                              );
+                sendJson(c, psql->getPostById(postId).dump(4));
 
             }
             //Recent Posts
             else if(regex_search(uri,recentPostsMatch,recentPostsExp)){
                 int howMany = stoi(recentPostsMatch[2]);
 
-                mg_http_reply(c,
-                              200,
-                              "Content-Type:application/json\r\n"
-                              "Access-Control-Allow-Origin:*\r\n",
-                              "%s\n", psql->getRecentPosts(howMany).dump(4).c_str()
-                              );
+                sendJson(c, psql->getRecentPosts(howMany).dump(4));
 
             }
             //Recent articles
             else if(regex_search(uri,recentArticlesMatch,recentArticlesExp)){
                 int howMany = stoi(recentArticlesMatch[2]);
 
-                mg_http_reply(c,
-                              200,
-                              "Content-Type:application/json\r\n"
-                              "Access-Control-Allow-Origin:*\r\n",
-                              "%s\n", psql->getRecentArticles(howMany).dump(4).c_str()
-                              );
+                sendJson(c, psql->getRecentArticles(howMany).dump(4));
 
             }
             //Recent projects
             else if(regex_search(uri, recentProjectsMatch,recentProjectsExp)){
                 int howMany = stoi(recentProjectsMatch[2]);
 
-                mg_http_reply(c,
-                              200,
-                              "Content-Type:application/json\r\n"
-                              "Access-Control-Allow-Origin:*\r\n",
-                              "%s\n", psql->getRecentProjects(howMany).dump(4).c_str()
-                              );
+                sendJson(c, psql->getRecentProjects(howMany).dump(4));
 
             }
             //Image by id

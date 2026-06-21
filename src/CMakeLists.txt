@@ -6,7 +6,7 @@ if(CMAKE_VERSION GREATER_EQUAL 3.30)
     cmake_policy(SET CMP0167 NEW)
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
@@ -30,19 +30,19 @@ FetchContent_Declare(
 
 FetchContent_Declare(
     libpqxx
-    URL https://github.com/jtv/libpqxx/archive/refs/tags/7.10.1.tar.gz
+    URL https://github.com/jtv/libpqxx/archive/refs/tags/8.0.1.tar.gz
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 
 FetchContent_Declare(
     mongoose_git
     GIT_REPOSITORY https://github.com/cesanta/mongoose.git
-    GIT_TAG 739d78a45a8fa6595498df67d11cac3e39af8c0e #7.19
+    GIT_TAG b1c2ffe1a0aa13e3d94075b1a2c66b8b43ac9116 #7.21
 )
 
 FetchContent_Declare(
     Boost
-    URL https://github.com/boostorg/boost/releases/download/boost-1.89.0/boost-1.89.0-cmake.tar.gz
+    URL https://github.com/boostorg/boost/releases/download/boost-1.91.0-1/boost-1.91.0-1-cmake.tar.gz
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 
