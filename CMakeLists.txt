@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.25)
 
-project(restgresql LANGUAGES CXX C)
+# Read version from VERSION file
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" PROJECT_VERSION_RAW)
+string(STRIP "${PROJECT_VERSION_RAW}" PROJECT_VERSION_STRIPPED)
+
+project(restgresql VERSION ${PROJECT_VERSION_STRIPPED} LANGUAGES CXX C)
 
 #cmake will warn about CMP0167 not being set in cmake >= 3.30.
 #Setting this as new keeps the cmake up to the latest policy standard.
