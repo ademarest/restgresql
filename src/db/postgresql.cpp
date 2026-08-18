@@ -1,6 +1,6 @@
 #include "postgresql.h"
+#include "utils/utils.h"
 #include <iostream>
-#include <boost/regex.hpp>
 #include <map>
 
 using namespace std;
@@ -9,17 +9,6 @@ using namespace nlohmann;
 PostgreSQL::PostgreSQL(string connString)
     : c(shared_ptr<pqxx::connection>(new pqxx::connection(connString))){
     initializeStatements();
-}
-
-string PostgreSQL::toLowerCamelCase(std::string s){
-    transform(s.begin(), s.end(), s.begin(),
-              [](unsigned char c){ return tolower(c); });
-
-    boost::regex re("([_-][a-z])");
-    s = boost::regex_replace(s, re, [](const boost::smatch& sm){
-        return string(1,toupper(sm[1].str().back()));
-    });
-    return s;
 }
 
 void PostgreSQL::initializeStatements(){
@@ -89,7 +78,7 @@ nlohmann::json PostgreSQL::pqxxRowToJsonObject(const pqxx::row_ref &r){
     //Define null interface.
     json obj = json::object();
     for(const auto &f:r){
-        obj.emplace(toLowerCamelCase(f.name()),pqxxFieldToJsonData(f));
+        obj.emplace(Utils::toLowerCamelCase(f.name()),pqxxFieldToJsonData(f));
     }
     return obj;
 }
@@ -145,6 +134,9 @@ string PostgreSQL::execGenericImgQry(string qry, pqxx::params qprms){
     try{
         pqxx::work txn{*c};
         pqxx::result r = txn.exec(pqxx::prepped{qry},qprms);
+        if (r.size() == 0) {
+            cout << "PostgreSQL::execGenericImgQry - No rows returned for query: " << qry << endl;
+        }
         for(auto const &row: r){
             pqxx::bytes bs = row[0].as<pqxx::bytes>();
             img.assign(reinterpret_cast<const char*>(bs.data()), bs.size());

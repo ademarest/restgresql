@@ -12,8 +12,6 @@ class PostgreSQL
 public:
     PostgreSQL(std::string connString);
 
-    std::string toLowerCamelCase(std::string in);
-
     std::string getImageById(int id);
     std::string getImageByFilename(std::string filename);
     nlohmann::json getPostById(int id);

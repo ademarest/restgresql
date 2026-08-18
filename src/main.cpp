@@ -1,4 +1,4 @@
-#include "restapi.h"
+#include "api/restapi.h"
 #include <iostream>
 #include <boost/program_options.hpp>
 
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
 
     bool ssl = !vm.count("dev-no-ssl");
 
-    RestAPI *api = new RestAPI(ssl, vm["config"].as<std::string>());
-    api->startServer();
+    RestAPI api(ssl, vm["config"].as<std::string>());
+    api.startServer();
     return 0;
 }

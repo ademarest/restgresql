@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mysite
+    volumes:
+      - ./tests/integration/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - CONFIG_FILE=/app/config.json
+    volumes:
+      - ./tests/integration/config.json:/app/config.json
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["--config", "/app/config.json", "--dev-no-ssl"]
