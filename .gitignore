@@ -1,4 +1,3 @@
-src/build
-src/CMakeLists.txt.user
-src/mongoose
-build
+build/
+CMakeLists.txt.user
+.venv/

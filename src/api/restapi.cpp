@@ -1,5 +1,6 @@
 #include "restapi.h"
-#include "postgresql.h"
+#include "db/postgresql.h"
+#include "router.h"
 #include <iostream>
 #include <fstream>
 #include <mutex>
@@ -30,8 +31,9 @@ void RestAPI::init(){
     if(!boost::filesystem::exists(RestAPI::configFile)){
         createConfigFile(configFile);
     }
-    json data = RestAPI::getConfigJson();
-    psql.reset(new PostgreSQL(data["dbConnString"]));
+    //Cache the config so handleRequest does not re-read the file on every event.
+    RestAPI::config = RestAPI::getConfigJson();
+    psql.reset(new PostgreSQL(config["dbConnString"]));
 }
 
 void RestAPI::setSSL(bool ssl){
@@ -113,14 +115,26 @@ void RestAPI::sendJson(struct mg_connection *c, std::string_view body) {
     c->is_resp = 0;
 }
 
+void RestAPI::sendImage(struct mg_connection *c, const std::string &img) {
+    if(img.empty()){
+        mg_http_reply(c, 404, "", "Image not found\n");
+        return;
+    }
+    mg_printf(c,
+              "HTTP/1.1 200 OK\r\n"
+              "Content-Type:application/octet-stream\r\n"
+              "Access-Control-Allow-Origin:*\r\n"
+              "Content-Length:%lu\r\n\r\n",
+              (unsigned long) img.size());
+    mg_send(c, img.data(), img.size());
+    c->recv.len = 0;     // Clean receive buffer
+    c->is_draining = 1;  // Close this connection when the response is sent
+}
+
 void RestAPI::handleRequest(struct mg_connection *c, int ev, void *ev_data){
-    json data = RestAPI::getConfigJson();
-
-    string dbConnString = data["dbConnString"];
-    string certPath = data["certPath"];
-    string keyPath = data["keyPath"];
-
     if (ev == MG_EV_ACCEPT && RestAPI::ssl) {
+        string certPath = config.value("certPath","");
+        string keyPath = config.value("keyPath","");
         mg_str crt = mg_file_read(&mg_fs_posix, certPath.c_str());
         mg_str key = mg_file_read(&mg_fs_posix, keyPath.c_str());
         struct mg_tls_opts opts = {.cert = crt, .key = key};
@@ -131,104 +145,54 @@ void RestAPI::handleRequest(struct mg_connection *c, int ev, void *ev_data){
         struct mg_http_message *message = (struct mg_http_message *) ev_data;
 
         string uri(message->uri.buf,message->uri.len);
-
-        regex postByIdExp("(/api/posts/(\\d+$))");
-        regex recentPostsExp("(/api/recentPosts/(\\d+$))");
-        regex recentArticlesExp("(/api/recentArticles/(\\d+$))");
-        regex recentProjectsExp("(/api/recentProjects/(\\d+$))");
-        regex imageByIdExp("(/api/images/(\\d+$))");
-        regex imageByFilenameExp("(/api/images/([^\\s]+(\\.(?i)(jpeg|jpg|png|gif|bmp))$))");
-
-        smatch postByIdMatch;
-        smatch recentPostsMatch;
-        smatch recentArticlesMatch;
-        smatch recentProjectsMatch;
-        smatch imageByIdMatch;
-        smatch imageByFilenameMatch;
+        Router::Route route = Router::match(uri);
 
         try{
-            //In Mongoose 7.13 this was:
-            /*mg_http_match_uri(message, "/api/articles")*/
-
-            //All posts
-            if(mg_match(message->uri,mg_str("/api/posts"), NULL)){
-
+            switch(route.endpoint){
+            case Router::Endpoint::AllPosts:
                 sendJson(c, psql->getAllPosts().dump(4));
-
-            }
-            //All projects
-            else if(mg_match(message->uri,mg_str("/api/projects"),NULL)){
-
+                break;
+            case Router::Endpoint::AllProjects:
                 sendJson(c, psql->getAllProjects().dump(4));
-
-            }
-            //All articles
-            else if(mg_match(message->uri,mg_str("/api/articles"),NULL)){
-
+                break;
+            case Router::Endpoint::AllArticles:
                 sendJson(c, psql->getAllArticles().dump(4));
-
-            }
-            //Post by id
-            else if(regex_search(uri,postByIdMatch,postByIdExp)){
-
-                int postId = stoi(postByIdMatch[2]);
-
-                sendJson(c, psql->getPostById(postId).dump(4));
-
-            }
-            //Recent Posts
-            else if(regex_search(uri,recentPostsMatch,recentPostsExp)){
-                int howMany = stoi(recentPostsMatch[2]);
-
-                sendJson(c, psql->getRecentPosts(howMany).dump(4));
-
-            }
-            //Recent articles
-            else if(regex_search(uri,recentArticlesMatch,recentArticlesExp)){
-                int howMany = stoi(recentArticlesMatch[2]);
-
-                sendJson(c, psql->getRecentArticles(howMany).dump(4));
-
-            }
-            //Recent projects
-            else if(regex_search(uri, recentProjectsMatch,recentProjectsExp)){
-                int howMany = stoi(recentProjectsMatch[2]);
-
-                sendJson(c, psql->getRecentProjects(howMany).dump(4));
-
-            }
-            //Image by id
-            else if(regex_search(uri,imageByIdMatch,imageByIdExp)){
-                int imageId = stoi(imageByIdMatch[2]);
-                string img = psql->getImageById(imageId);
-                int buffer = img.size();
-
-                mg_printf(c, "HTTP/1.1 200 OK\r\nContent-Length:%d\r\n\r\n", buffer);
-                mg_send(c, img.data(), buffer);
-                c->recv.len = 0;     // Clean receive buffer
-                c->is_draining = 1;  // Close this connection when the response is sent
-
-                //Image by file name
-            } else if(regex_search(uri,imageByFilenameMatch, imageByFilenameExp)){
-
-                string imageFileName = imageByFilenameMatch[2];
-                string img = psql->getImageByFilename(imageFileName);
-                int buffer = img.size();
-
-                mg_printf(c, "HTTP/1.1 200 OK\r\nContent-Length:%d\r\n\r\n", buffer);
-                mg_send(c, img.data(), buffer);
-                c->recv.len = 0;     // Clean receive buffer
-                c->is_draining = 1;  // Close this connection when the response is sent
-
-            }
-            //404
-            else {
+                break;
+            case Router::Endpoint::PostById:
+                sendJson(c, psql->getPostById(route.intParam).dump(4));
+                break;
+            case Router::Endpoint::RecentPosts:
+                sendJson(c, psql->getRecentPosts(route.intParam).dump(4));
+                break;
+            case Router::Endpoint::RecentArticles:
+                sendJson(c, psql->getRecentArticles(route.intParam).dump(4));
+                break;
+            case Router::Endpoint::RecentProjects:
+                sendJson(c, psql->getRecentProjects(route.intParam).dump(4));
+                break;
+            case Router::Endpoint::ImageById:
+                sendImage(c, psql->getImageById(route.intParam));
+                break;
+            case Router::Endpoint::ImageByFilename:
+                sendImage(c, psql->getImageByFilename(route.strParam));
+                break;
+            case Router::Endpoint::NotFound:
+            default:
                 mg_http_reply(c, 404, "", "<h1>404</h1>\nYour call cannot be completed as dialed.\nPlease hang up and try again.\n");
+                break;
             }
 
+        } catch(const pqxx::broken_connection &e){
+            //Only a broken connection warrants re-establishing the DB session.
+            cout << "RestAPI::handleRequest " << e.what() << endl;
+            try{
+                psql.reset(new PostgreSQL(config["dbConnString"]));
+            } catch(const std::exception &re){
+                cout << "RestAPI::handleRequest reconnect failed: " << re.what() << endl;
+            }
+            mg_http_reply(c, 500, "", "<h1>500</h1>\nInternal Server Error!\n I don't feel so good Mr. Stark.");
         } catch(const std::exception &e){
             cout << "RestAPI::handleRequest " << e.what() << endl;
-            psql.reset(new PostgreSQL(dbConnString));
             mg_http_reply(c, 500, "", "<h1>500</h1>\nInternal Server Error!\n I don't feel so good Mr. Stark.");
         }
     }

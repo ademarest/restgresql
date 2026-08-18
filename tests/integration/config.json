@@ -1,0 +1,5 @@
+{
+  "dbConnString": "postgresql://postgres:mypassword@db:5432/mysite",
+  "certPath": "/etc/ssl/certs/server.crt",
+  "keyPath": "/etc/ssl/private/server.key"
+}

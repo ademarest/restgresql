@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
+project(restgresql LANGUAGES CXX C)
+
 #cmake will warn about CMP0167 not being set in cmake >= 3.30.
 #Setting this as new keeps the cmake up to the latest policy standard.
 if(CMAKE_VERSION GREATER_EQUAL 3.30)
@@ -13,10 +15,8 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 set(BOOST_LIBS Boost::filesystem Boost::iostreams Boost::program_options)
 
-project(restgresql LANGUAGES CXX C)
-
-include(FetchContent GNUInstallDirs)
-include(CMakePrintHelpers)
+include(FetchContent)
+include(GNUInstallDirs)
 
 find_package(Threads)
 find_package(PkgConfig)
@@ -48,22 +48,41 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(boost json libpqxx mongoose_git)
 
-file(COPY ${mongoose_git_SOURCE_DIR}/mongoose.h DESTINATION ${CMAKE_SOURCE_DIR}/mongoose)
-file(COPY ${mongoose_git_SOURCE_DIR}/mongoose.c DESTINATION ${CMAKE_SOURCE_DIR}/mongoose)
-add_library(mongoose STATIC ${CMAKE_SOURCE_DIR}/mongoose/mongoose.h ${CMAKE_SOURCE_DIR}/mongoose/mongoose.c)
+#Copy mongoose into the binary dir so the source tree stays clean.
+file(COPY ${mongoose_git_SOURCE_DIR}/mongoose.h DESTINATION ${CMAKE_BINARY_DIR}/mongoose)
+file(COPY ${mongoose_git_SOURCE_DIR}/mongoose.c DESTINATION ${CMAKE_BINARY_DIR}/mongoose)
+add_library(mongoose STATIC ${CMAKE_BINARY_DIR}/mongoose/mongoose.h ${CMAKE_BINARY_DIR}/mongoose/mongoose.c)
 set_target_properties(mongoose PROPERTIES COMPILE_FLAGS "-DMG_TLS=MG_TLS_OPENSSL")
+target_include_directories(mongoose PUBLIC ${CMAKE_BINARY_DIR})
 target_link_libraries(mongoose OpenSSL::SSL OpenSSL::Crypto)
 
 add_executable(
     restgresql
-    main.cpp
-    postgresql.h
-    postgresql.cpp
-    restapi.h
-    restapi.cpp
+    src/main.cpp
+    src/api/restapi.h
+    src/api/restapi.cpp
+    src/api/router.h
+    src/api/router.cpp
+    src/db/postgresql.h
+    src/db/postgresql.cpp
+    src/utils/utils.h
+    src/utils/utils.cpp
 )
 
+target_include_directories(restgresql PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(restgresql PRIVATE nlohmann_json::nlohmann_json mongoose pqxx "${BOOST_LIBS}")
+
+enable_testing()
+
+add_executable(
+    unit_tests
+    tests/unit/unit_tests.cpp
+    src/api/router.cpp
+    src/utils/utils.cpp
+)
+target_include_directories(unit_tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(unit_tests PRIVATE nlohmann_json::nlohmann_json "${BOOST_LIBS}")
+add_test(NAME unit_tests COMMAND unit_tests)
 
 install(
     TARGETS restgresql

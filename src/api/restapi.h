@@ -5,7 +5,7 @@
 #include <boost/regex.hpp>
 #include <boost/filesystem.hpp>
 #include <nlohmann/json.hpp>
-#include "postgresql.h"
+#include "db/postgresql.h"
 
 class RestAPI
 {
@@ -28,9 +28,11 @@ public:
 private:
 
     static void sendJson(struct mg_connection *c, std::string_view body);
+    static void sendImage(struct mg_connection *c, const std::string &img);
 
     static inline std::unique_ptr<PostgreSQL> psql;
     static inline std::string configFile = "./restgresql.json";
+    static inline nlohmann::json config;
     static inline std::mutex mtx;
     static inline bool ssl = true;
     bool running = true;
