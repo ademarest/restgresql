@@ -1,0 +1,18 @@
+[Unit]
+Description=RestgreSQL - REST API server for PostgreSQL
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=restgresql
+Group=restgresql
+ExecStart=/usr/bin/restgresql --config /etc/restgresql/restgresql.conf
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/etc/restgresql
+
+[Install]
+WantedBy=multi-user.target

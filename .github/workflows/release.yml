@@ -68,9 +68,18 @@ jobs:
           BUILD_DIR="deb_build"
           
           mkdir -p $BUILD_DIR/usr/bin
+          mkdir -p $BUILD_DIR/etc/restgresql
+          mkdir -p $BUILD_DIR/lib/systemd/system
           mkdir -p $BUILD_DIR/DEBIAN
           
           cp build/restgresql $BUILD_DIR/usr/bin/
+          cp packaging/deb/restgresql.conf $BUILD_DIR/etc/restgresql/restgresql.conf
+          cp packaging/deb/restgresql.service $BUILD_DIR/lib/systemd/system/restgresql.service
+          cp packaging/deb/postinst $BUILD_DIR/DEBIAN/postinst
+          cp packaging/deb/postrm $BUILD_DIR/DEBIAN/postrm
+          chmod 755 $BUILD_DIR/DEBIAN/postinst $BUILD_DIR/DEBIAN/postrm
+          
+          echo "/etc/restgresql/restgresql.conf" > $BUILD_DIR/DEBIAN/conffiles
           
           {
             echo "Package: $PACKAGE_NAME"
@@ -78,7 +87,7 @@ jobs:
             echo "Section: utils"
             echo "Priority: optional"
             echo "Architecture: amd64"
-            echo "Depends: libpq5, libssl3, zlib1g, libbz2-1.0, liblzma5, libzstd1"
+            echo "Depends: libpq5, libssl3, zlib1g, libbz2-1.0, liblzma5, libzstd1, adduser"
             echo "Maintainer: Andrew Demarest <andrew@example.com>"
             echo "Description: Lightweight C++ REST API server for PostgreSQL"
           } > $BUILD_DIR/DEBIAN/control
