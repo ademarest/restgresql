@@ -1,0 +1,25 @@
+#!/bin/sh
+# postrm: disables the service and, on purge, removes the service user and config.
+set -e
+
+case "$1" in
+    remove)
+        if [ -d /run/systemd/system ]; then
+            systemctl disable restgresql.service >/dev/null 2>&1 || true
+        fi
+        ;;
+    purge)
+        if [ -d /run/systemd/system ]; then
+            systemctl disable restgresql.service >/dev/null 2>&1 || true
+        fi
+        if getent passwd restgresql >/dev/null; then
+            deluser --system restgresql >/dev/null 2>&1 || true
+        fi
+        if getent group restgresql >/dev/null; then
+            delgroup --system restgresql >/dev/null 2>&1 || true
+        fi
+        rm -rf /etc/restgresql
+        ;;
+esac
+
+exit 0

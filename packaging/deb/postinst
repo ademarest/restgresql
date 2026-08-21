@@ -1,0 +1,28 @@
+#!/bin/sh
+# postinst: runs after files are unpacked, sets up the service user and permissions.
+set -e
+
+case "$1" in
+    configure)
+        if ! getent group restgresql >/dev/null; then
+            addgroup --system restgresql
+        fi
+        if ! getent passwd restgresql >/dev/null; then
+            adduser --system --ingroup restgresql --no-create-home \
+                --home /nonexistent --shell /usr/sbin/nologin restgresql
+        fi
+
+        # Config holds a DB connection string and key paths, so keep it non-world-readable.
+        chown root:restgresql /etc/restgresql/restgresql.conf
+        chmod 640 /etc/restgresql/restgresql.conf
+
+        if [ -d /run/systemd/system ]; then
+            systemctl daemon-reload >/dev/null 2>&1 || true
+            systemctl enable restgresql.service >/dev/null 2>&1 || true
+        fi
+
+        echo "restgresql: edit /etc/restgresql/restgresql.conf, then run: systemctl start restgresql"
+        ;;
+esac
+
+exit 0
