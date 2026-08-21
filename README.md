@@ -2,6 +2,30 @@
 
 RestgreSQL is a lightweight C++ REST API server that provides a JSON interface for interacting with a PostgreSQL database. It is designed to simplify data access for web applications by exposing database queries as RESTful endpoints.
 
+## Quick Start
+
+Choose one of the following options to get started quickly:
+
+### Docker
+```bash
+docker run -p 8000:8000 ghcr.io/ademarest/restgresql:latest
+```
+
+### Debian Package
+```bash
+sudo apt install ./restgresql_*.deb
+```
+Download the latest `.deb` from [GitHub Releases](https://github.com/ademarest/restgresql/releases).
+
+### Build from Source
+```bash
+git clone https://github.com/ademarest/restgresql.git
+cd restgresql
+mkdir build && cd build
+cmake ..
+make
+```
+
 ## Features
 
 - **JSON API**: Seamlessly interact with your PostgreSQL data using standard JSON.
@@ -44,7 +68,7 @@ sudo apt install cmake libboost-all-dev libssl-dev libpqxx-dev libbz2-dev liblzm
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/ademarest/restgresql.git
    cd restgresql
    ```
 
@@ -77,7 +101,7 @@ For local development, you can disable SSL using the `--dev-no-ssl` flag:
 
 ## PostgreSQL Configuration Guide
 
-To use RestgreSQL, you need a properly configured PostgreSQL database. Below is a guide for setting up a production-ready environment on Ubuntu.
+For a complete guide to setting up a production-ready PostgreSQL environment on Ubuntu, see [yonderserver.com/post/6](https://yonderserver.com/post/6).
 
 ### 1. Install and Configure PostgreSQL
 
