@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  build-and-unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ make libssl-dev libpq-dev
+
+      - name: Configure and build
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          make -j$(nproc)
+
+      - name: Run unit tests
+        run: |
+          cd build
+          ctest --output-on-failure
+
+      - name: Build Docker image
+        run: docker build -t restgresql:ci .
+
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: build-and-unit-test
+    env:
+      POSTGRES_PASSWORD: ci-test-password
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Start stack
+        run: docker compose up -d --build --wait
+
+      - name: Install test dependencies
+        run: pip install requests
+
+      - name: Run integration tests
+        run: python3 tests/integration/test_suite.py
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v

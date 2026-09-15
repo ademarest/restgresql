@@ -15,6 +15,8 @@ namespace Router {
         RecentProjects,
         ImageById,
         ImageByFilename,
+        Health,
+        Version,
         NotFound
     };
 

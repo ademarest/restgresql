@@ -1,9 +1,12 @@
 #include "restapi.h"
 #include "db/postgresql.h"
 #include "router.h"
+#include "utils/utils.h"
+#include "version.h"
 #include <iostream>
 #include <fstream>
 #include <mutex>
+#include <cstdlib>
 
 using namespace nlohmann;
 using namespace std;
@@ -33,7 +36,15 @@ void RestAPI::init(){
     }
     //Cache the config so handleRequest does not re-read the file on every event.
     RestAPI::config = RestAPI::getConfigJson();
+    applyEnvOverrides();
     psql.reset(new PostgreSQL(config["dbConnString"]));
+}
+
+void RestAPI::applyEnvOverrides(){
+    //Lets secrets (e.g. the DB connection string) be injected by Compose/systemd instead of living in the config file.
+    if(const char *v = std::getenv("RESTGRESQL_DB_CONN_STRING")) config["dbConnString"] = v;
+    if(const char *v = std::getenv("RESTGRESQL_CERT_PATH")) config["certPath"] = v;
+    if(const char *v = std::getenv("RESTGRESQL_KEY_PATH")) config["keyPath"] = v;
 }
 
 void RestAPI::setSSL(bool ssl){
@@ -104,13 +115,14 @@ void RestAPI::createConfigFile(string configFile){
     cf.close();
 }
 
-void RestAPI::sendJson(struct mg_connection *c, std::string_view body) {
+void RestAPI::sendJson(struct mg_connection *c, std::string_view body, int status) {
+    const char *reason = (status == 200) ? "OK" : (status == 503) ? "Service Unavailable" : "Error";
     mg_printf(c,
-              "HTTP/1.1 200 OK\r\n"
+              "HTTP/1.1 %d %s\r\n"
               "Content-Type:application/json\r\n"
               "Access-Control-Allow-Origin:*\r\n"
               "Content-Length:%lu\r\n\r\n",
-              (unsigned long) body.size());
+              status, reason, (unsigned long) body.size());
     mg_send(c, body.data(), body.size());
     c->is_resp = 0;
 }
@@ -120,12 +132,16 @@ void RestAPI::sendImage(struct mg_connection *c, const std::string &img) {
         mg_http_reply(c, 404, "", "Image not found\n");
         return;
     }
+    std::string contentType = Utils::detectImageContentType(img);
+    // Consumers may set COEP:require-corp (e.g. mysite for its Godot games),
+    // which blocks cross-origin subresources lacking this header.
     mg_printf(c,
               "HTTP/1.1 200 OK\r\n"
-              "Content-Type:application/octet-stream\r\n"
+              "Content-Type:%s\r\n"
               "Access-Control-Allow-Origin:*\r\n"
+              "Cross-Origin-Resource-Policy:cross-origin\r\n"
               "Content-Length:%lu\r\n\r\n",
-              (unsigned long) img.size());
+              contentType.c_str(), (unsigned long) img.size());
     mg_send(c, img.data(), img.size());
     c->recv.len = 0;     // Clean receive buffer
     c->is_draining = 1;  // Close this connection when the response is sent
@@ -176,6 +192,15 @@ void RestAPI::handleRequest(struct mg_connection *c, int ev, void *ev_data){
             case Router::Endpoint::ImageByFilename:
                 sendImage(c, psql->getImageByFilename(route.strParam));
                 break;
+            case Router::Endpoint::Health: {
+                bool dbUp = psql->isHealthy();
+                json body = {{"status", dbUp ? "ok" : "degraded"}, {"db", dbUp ? "up" : "down"}};
+                sendJson(c, body.dump(4), dbUp ? 200 : 503);
+                break;
+            }
+            case Router::Endpoint::Version:
+                sendJson(c, json{{"version", RESTGRESQL_VERSION}}.dump(4));
+                break;
             case Router::Endpoint::NotFound:
             default:
                 mg_http_reply(c, 404, "", "<h1>404</h1>\nYour call cannot be completed as dialed.\nPlease hang up and try again.\n");
@@ -202,7 +227,7 @@ void RestAPI::startServer(){
     mg_log_set(MG_LL_DEBUG);
     struct mg_mgr mgr;  // Declare event manager
     mg_mgr_init(&mgr);  // Initialise event manager
-    mg_http_listen(&mgr, "http://0.0.0.0:8000", handleRequest, NULL);  // Setup listener
+    mg_http_listen(&mgr, "http://[::]:8000", handleRequest, NULL);  // Dual-stack: IPv6 wildcard also accepts IPv4 (MG_IPV6_V6ONLY=0)
     while (running == true) mg_mgr_poll(&mgr, 1000);   // Event loop
     mg_mgr_free(&mgr);
 }

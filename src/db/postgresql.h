@@ -12,6 +12,7 @@ class PostgreSQL
 public:
     PostgreSQL(std::string connString);
 
+    bool isHealthy();
     std::string getImageById(int id);
     std::string getImageByFilename(std::string filename);
     nlohmann::json getPostById(int id);

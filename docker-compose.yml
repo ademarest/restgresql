@@ -2,13 +2,13 @@ services:
   db:
     image: postgres:latest
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: mysite
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD, see .env.example}
+      POSTGRES_DB: ${POSTGRES_DB:-mysite}
     volumes:
       - ./tests/integration/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -18,10 +18,15 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - CONFIG_FILE=/app/config.json
+      RESTGRESQL_DB_CONN_STRING: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD, see .env.example}@db:5432/${POSTGRES_DB:-mysite}
     volumes:
       - ./tests/integration/config.json:/app/config.json
     depends_on:
       db:
         condition: service_healthy
     command: ["--config", "/app/config.json", "--dev-no-ssl"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/api/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10

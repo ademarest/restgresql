@@ -1,0 +1,6 @@
+#ifndef VERSION_H
+#define VERSION_H
+
+#define RESTGRESQL_VERSION "@PROJECT_VERSION_STRIPPED@"
+
+#endif // VERSION_H
