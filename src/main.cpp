@@ -1,9 +1,16 @@
 #include "api/restapi.h"
 #include <iostream>
+#include <csignal>
 #include <boost/program_options.hpp>
 
 using namespace boost::program_options;
 // HTTP server event handler function
+
+// Containers run this as PID 1, where unhandled signals are ignored by default,
+// so without this podman/docker stop has to wait out the timeout and SIGKILL it.
+void handleShutdownSignal(int){
+    RestAPI::stop();
+}
 
 int main(int argc, char *argv[]) {
     //For Archlinux, the following additional packaged are required.
@@ -43,6 +50,9 @@ int main(int argc, char *argv[]) {
     }
 
     bool ssl = !vm.count("dev-no-ssl");
+
+    std::signal(SIGTERM, handleShutdownSignal);
+    std::signal(SIGINT, handleShutdownSignal);
 
     RestAPI api(ssl, vm["config"].as<std::string>());
     api.startServer();

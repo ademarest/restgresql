@@ -30,6 +30,10 @@ RestAPI::~RestAPI() {
     running=false;
 }
 
+void RestAPI::stop(){
+    running=false;
+}
+
 void RestAPI::init(){
     if(!boost::filesystem::exists(RestAPI::configFile)){
         createConfigFile(configFile);

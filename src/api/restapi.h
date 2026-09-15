@@ -24,6 +24,7 @@ public:
     static void createConfigFile(std::string configFile);
     static void handleRequest(struct mg_connection *c, int ev, void *ev_data);
     void startServer();
+    static void stop();
 
 private:
 
@@ -36,7 +37,7 @@ private:
     static inline nlohmann::json config;
     static inline std::mutex mtx;
     static inline bool ssl = true;
-    bool running = true;
+    static inline bool running = true;
 };
 
 #endif // RESTAPI_H
