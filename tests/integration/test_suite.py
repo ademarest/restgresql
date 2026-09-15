@@ -17,7 +17,7 @@ def test_post_by_id():
     response = requests.get(f"{BASE_URL}/api/posts/1")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
     data = response.json()
-    assert data["postTitle"] == "Test Article", f"Expected 'Test Article', got {data.get('postTitle')}"
+    assert data["postTitle"] == "Welcome to my Test Website", f"Expected 'Welcome to my Test Website', got {data.get('postTitle')}"
     print("PASS")
 
 def test_recent_posts():
@@ -29,18 +29,22 @@ def test_recent_posts():
     assert len(data) == 1, f"Expected 1 post, got {len(data)}"
     print("PASS")
 
+PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+
 def test_image_by_id():
     print("Testing /api/images/1...", end=" ")
     response = requests.get(f"{BASE_URL}/api/images/1")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-    assert len(response.content) > 0, "Expected image content, but got empty response"
+    assert response.headers.get("Content-Type") == "image/png", f"Expected image/png, got {response.headers.get('Content-Type')}"
+    assert response.content[:8] == PNG_SIGNATURE, "Response body is not a valid PNG"
     print("PASS")
 
 def test_image_by_filename():
     print("Testing /api/images/test.png...", end=" ")
     response = requests.get(f"{BASE_URL}/api/images/test.png")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-    assert len(response.content) > 0, "Expected image content, but got empty response"
+    assert response.headers.get("Content-Type") == "image/png", f"Expected image/png, got {response.headers.get('Content-Type')}"
+    assert response.content[:8] == PNG_SIGNATURE, "Response body is not a valid PNG"
     print("PASS")
 
 def test_404():

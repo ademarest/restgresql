@@ -37,6 +37,30 @@ void test_toLowerCamelCase() {
     std::cout << "test_toLowerCamelCase passed!" << std::endl;
 }
 
+void test_detectImageContentType() {
+    std::cout << "Running test_detectImageContentType..." << std::endl;
+
+    std::vector<TestCase> cases = {
+        {std::string("\x89PNG\r\n\x1a\n", 8) + "rest", "image/png"},
+        {std::string("\xFF\xD8\xFF", 3) + "rest", "image/jpeg"},
+        {"GIF89a" "rest", "image/gif"},
+        {"GIF87a" "rest", "image/gif"},
+        {"BM" "rest", "image/bmp"},
+        {"not an image", "application/octet-stream"},
+        {"", "application/octet-stream"},
+    };
+
+    for (const auto& tc : cases) {
+        std::string result = Utils::detectImageContentType(tc.input);
+        if (result != tc.expected) {
+            std::cerr << "Test Failed: detectImageContentType expected '" << tc.expected
+                      << "' but got '" << result << "'" << std::endl;
+            std::exit(1);
+        }
+    }
+    std::cout << "test_detectImageContentType passed!" << std::endl;
+}
+
 struct RouteCase {
     std::string uri;
     Router::Endpoint expected;
@@ -60,6 +84,10 @@ void test_router() {
         {"/api/recentArticles/3", Router::Endpoint::RecentArticles, 3},
         {"/api/recentProjects/7", Router::Endpoint::RecentProjects, 7},
         {"/api/images/9", Router::Endpoint::ImageById, 9},
+
+        //Ops endpoints
+        {"/api/health", Router::Endpoint::Health},
+        {"/api/version", Router::Endpoint::Version},
 
         //Filenames, including case-insensitive extensions
         {"/api/images/test.png", Router::Endpoint::ImageByFilename, 0, "test.png"},
@@ -107,6 +135,7 @@ void test_router() {
 int main() {
     try {
         test_toLowerCamelCase();
+        test_detectImageContentType();
         test_router();
         std::cout << "\nAll unit tests passed successfully!" << std::endl;
     } catch (const std::exception& e) {

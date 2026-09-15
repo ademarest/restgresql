@@ -11,6 +11,19 @@ PostgreSQL::PostgreSQL(string connString)
     initializeStatements();
 }
 
+bool PostgreSQL::isHealthy(){
+    lock_guard<mutex> lock(*cmtx);
+    try{
+        pqxx::work txn{*c};
+        txn.exec("SELECT 1");
+        txn.commit();
+        return true;
+    } catch(const exception &e){
+        cout << "PostgreSQL::isHealthy " << e.what() << endl;
+        return false;
+    }
+}
+
 void PostgreSQL::initializeStatements(){
     //Formatted the string to copy/paste into the IDE with
     //https://tomeko.net/online_tools/cpp_text_escape.php?lang=en

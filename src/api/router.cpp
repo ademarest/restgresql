@@ -38,6 +38,12 @@ namespace Router {
         else if(uri == "/api/articles"){
             route.endpoint = Endpoint::AllArticles;
         }
+        else if(uri == "/api/health"){
+            route.endpoint = Endpoint::Health;
+        }
+        else if(uri == "/api/version"){
+            route.endpoint = Endpoint::Version;
+        }
         else if(boost::regex_match(uri, m, postByIdExp)){
             if(parseInt(m[1], route.intParam)) route.endpoint = Endpoint::PostById;
         }

@@ -1,3 +1,16 @@
 build/
 CMakeLists.txt.user
 .venv/
+.env
+
+# compiled objects/binaries if built outside build/
+*.o
+*.obj
+*.out
+core
+
+# editor/OS
+.vscode/
+.cache/
+.DS_Store
+

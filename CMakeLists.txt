@@ -6,6 +6,14 @@ string(STRIP "${PROJECT_VERSION_RAW}" PROJECT_VERSION_STRIPPED)
 
 project(restgresql VERSION ${PROJECT_VERSION_STRIPPED} LANGUAGES CXX C)
 
+#Embed the version so the running binary can report it at /api/version.
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/generated/version.h"
+    @ONLY
+)
+
+
 #cmake will warn about CMP0167 not being set in cmake >= 3.30.
 #Setting this as new keeps the cmake up to the latest policy standard.
 if(CMAKE_VERSION GREATER_EQUAL 3.30)
@@ -56,7 +64,7 @@ FetchContent_MakeAvailable(boost json libpqxx mongoose_git)
 file(COPY ${mongoose_git_SOURCE_DIR}/mongoose.h DESTINATION ${CMAKE_BINARY_DIR}/mongoose)
 file(COPY ${mongoose_git_SOURCE_DIR}/mongoose.c DESTINATION ${CMAKE_BINARY_DIR}/mongoose)
 add_library(mongoose STATIC ${CMAKE_BINARY_DIR}/mongoose/mongoose.h ${CMAKE_BINARY_DIR}/mongoose/mongoose.c)
-set_target_properties(mongoose PROPERTIES COMPILE_FLAGS "-DMG_TLS=MG_TLS_OPENSSL")
+set_target_properties(mongoose PROPERTIES COMPILE_FLAGS "-DMG_TLS=MG_TLS_OPENSSL -DMG_ENABLE_IPV6=1")
 target_include_directories(mongoose PUBLIC ${CMAKE_BINARY_DIR})
 target_link_libraries(mongoose OpenSSL::SSL OpenSSL::Crypto)
 
@@ -73,7 +81,7 @@ add_executable(
     src/utils/utils.cpp
 )
 
-target_include_directories(restgresql PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(restgresql PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/generated)
 target_link_libraries(restgresql PRIVATE nlohmann_json::nlohmann_json mongoose pqxx "${BOOST_LIBS}")
 
 enable_testing()

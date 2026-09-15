@@ -99,6 +99,14 @@ For local development, you can disable SSL using the `--dev-no-ssl` flag:
 ./restgresql --dev-no-ssl --config /path/to/your/config.json
 ```
 
+### Environment Variable Overrides
+
+`dbConnString`, `certPath`, and `keyPath` can be overridden with `RESTGRESQL_DB_CONN_STRING`, `RESTGRESQL_CERT_PATH`, and `RESTGRESQL_KEY_PATH` respectively. This lets secrets be injected at runtime (e.g. by Docker Compose or systemd) instead of living in the config file. Environment values take precedence over the config file when both are set.
+
+### Health and Version
+
+`GET /api/health` returns `200` with `{"status":"ok","db":"up"}` when the database connection is reachable, or `503` with `{"status":"degraded","db":"down"}` otherwise. `GET /api/version` returns `{"version":"<version>"}`.
+
 ## PostgreSQL Configuration Guide
 
 For a complete guide to setting up a production-ready PostgreSQL environment on Ubuntu, see [yonderserver.com/post/6](https://yonderserver.com/post/6).

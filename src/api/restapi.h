@@ -24,18 +24,20 @@ public:
     static void createConfigFile(std::string configFile);
     static void handleRequest(struct mg_connection *c, int ev, void *ev_data);
     void startServer();
+    static void stop();
 
 private:
 
-    static void sendJson(struct mg_connection *c, std::string_view body);
+    static void sendJson(struct mg_connection *c, std::string_view body, int status = 200);
     static void sendImage(struct mg_connection *c, const std::string &img);
+    static void applyEnvOverrides();
 
     static inline std::unique_ptr<PostgreSQL> psql;
     static inline std::string configFile = "./restgresql.json";
     static inline nlohmann::json config;
     static inline std::mutex mtx;
     static inline bool ssl = true;
-    bool running = true;
+    static inline bool running = true;
 };
 
 #endif // RESTAPI_H
