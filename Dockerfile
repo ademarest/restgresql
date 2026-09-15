@@ -17,12 +17,11 @@ WORKDIR /app
 # Copy source code
 COPY . .
 
-# Build the project and run unit tests
+# Build the project (unit tests already run natively in CI before this image is built)
 RUN mkdir build && \
     cd build && \
     cmake .. && \
-    make -j$(nproc) && \
-    ctest --output-on-failure
+    make -j$(nproc)
 
 # Runtime Stage
 FROM alpine:latest
